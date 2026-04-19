@@ -1,0 +1,20 @@
+.env
+__pycache__/
+*.py[cod]
+*.log
+*.log.*
+
+# rembg model cache
+.u2net/
+
+# common Python artifacts
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
