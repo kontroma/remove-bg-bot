@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/kontroma/Documents/remove-bg-bot-main status)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}
