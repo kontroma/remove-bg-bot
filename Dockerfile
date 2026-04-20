@@ -1,5 +1,15 @@
 FROM python:3.11-slim
 
+# Reduce memory footprint:
+# - OMP/OpenBLAS thread caps prevent each thread from allocating its own arena.
+# - MALLOC_TRIM_THRESHOLD tells glibc to return freed memory to the OS promptly.
+# - PYTHONUNBUFFERED keeps logs streaming without an extra buffer.
+ENV OMP_NUM_THREADS=2 \
+    OPENBLAS_NUM_THREADS=2 \
+    MKL_NUM_THREADS=2 \
+    MALLOC_TRIM_THRESHOLD_=65536 \
+    PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
 # System deps for rembg / Pillow

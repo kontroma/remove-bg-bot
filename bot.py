@@ -30,8 +30,13 @@ async def main() -> None:
     setup_logging()
     logger = logging.getLogger(__name__)
 
-    logger.info("Preloading rembg model '%s'...", config.REMBG_MODEL)
-    await bg_remover.preload_model(config.REMBG_MODEL)
+    logger.info(
+        "Preloading rembg model '%s' (threads=%d, max_side=%d)...",
+        config.REMBG_MODEL,
+        config.ONNX_INTRA_THREADS,
+        config.MAX_IMAGE_SIDE,
+    )
+    await bg_remover.preload_model(config.REMBG_MODEL, config.ONNX_INTRA_THREADS)
 
     bot = Bot(token=config.BOT_TOKEN)
     dp = Dispatcher()
