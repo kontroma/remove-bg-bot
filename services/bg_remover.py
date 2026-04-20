@@ -5,7 +5,8 @@ import logging
 
 import onnxruntime as ort
 from PIL import Image
-from rembg import new_session, remove
+from rembg import remove
+from rembg.session_factory import sessions_class
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,13 @@ def _build_sess_options(intra_threads: int) -> ort.SessionOptions:
 def _load_model(model_name: str, intra_threads: int) -> None:
     global _session
     logger.info("Loading rembg model '%s' (intra_threads=%d)...", model_name, intra_threads)
+    # Bypass new_session(): it creates its own SessionOptions internally and passes
+    # them positionally, so any sess_opts= kwarg causes "multiple values" TypeError.
+    session_class = sessions_class.get(model_name)
+    if session_class is None:
+        raise ValueError(f"Unknown rembg model: '{model_name}'. Available: {list(sessions_class)}")
     sess_opts = _build_sess_options(intra_threads)
-    _session = new_session(model_name, sess_opts=sess_opts, providers=["CPUExecutionProvider"])
+    _session = session_class(model_name, sess_opts, ["CPUExecutionProvider"])
     logger.info("Model loaded successfully.")
 
 
