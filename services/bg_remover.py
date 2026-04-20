@@ -2,7 +2,6 @@ import asyncio
 import gc
 import io
 import logging
-from typing import Optional
 
 import onnxruntime as ort
 from PIL import Image
@@ -39,7 +38,11 @@ def _find_session_class(model_name: str):
         cls = next((sc for sc in sessions_class if sc.name() == model_name), None)
 
     if cls is None:
-        available = list(sessions_class) if isinstance(sessions_class, dict) else [sc.name() for sc in sessions_class]
+        available = (
+            list(sessions_class)
+            if isinstance(sessions_class, dict)
+            else [sc.name() for sc in sessions_class]
+        )
         raise ValueError(f"Unknown rembg model: '{model_name}'. Available: {available}")
     return cls
 
