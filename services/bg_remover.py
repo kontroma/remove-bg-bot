@@ -2,11 +2,12 @@ import asyncio
 import gc
 import io
 import logging
+from typing import Optional
 
 import onnxruntime as ort
 from PIL import Image
 from rembg import remove
-from rembg.session_factory import sessions_class
+from rembg.session_factory import sessions_class  # list[type[BaseSession]] in rembg ≥ 2.0.57
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +25,32 @@ def _build_sess_options(intra_threads: int) -> ort.SessionOptions:
     return opts
 
 
+def _find_session_class(model_name: str):
+    """Locate the rembg session class for *model_name*.
+
+    rembg changed `sessions_class` from a dict (≤ 2.0.56) to a list (≥ 2.0.57).
+    We handle both shapes so the code stays compatible across versions.
+    """
+    if isinstance(sessions_class, dict):
+        # Legacy dict: {"isnet-general-use": IsNetSession, ...}
+        cls = sessions_class.get(model_name)
+    else:
+        # Current list: each element exposes a .name() classmethod
+        cls = next((sc for sc in sessions_class if sc.name() == model_name), None)
+
+    if cls is None:
+        available = list(sessions_class) if isinstance(sessions_class, dict) else [sc.name() for sc in sessions_class]
+        raise ValueError(f"Unknown rembg model: '{model_name}'. Available: {available}")
+    return cls
+
+
 def _load_model(model_name: str, intra_threads: int) -> None:
     global _session
     logger.info("Loading rembg model '%s' (intra_threads=%d)...", model_name, intra_threads)
-    # Bypass new_session(): it creates its own SessionOptions internally and passes
-    # them positionally, so any sess_opts= kwarg causes "multiple values" TypeError.
-    session_class = sessions_class.get(model_name)
-    if session_class is None:
-        raise ValueError(f"Unknown rembg model: '{model_name}'. Available: {list(sessions_class)}")
+    # We instantiate the session class directly instead of calling new_session(),
+    # because new_session() builds its own SessionOptions internally and we need
+    # to pass our own tuned opts (thread limits, mem_pattern=False).
+    session_class = _find_session_class(model_name)
     sess_opts = _build_sess_options(intra_threads)
     _session = session_class(model_name, sess_opts, ["CPUExecutionProvider"])
     logger.info("Model loaded successfully.")
