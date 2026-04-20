@@ -5,7 +5,7 @@ from typing import Optional
 from aiogram import Bot, Router
 from aiogram.types import BufferedInputFile, Document, Message, PhotoSize
 
-from config import MAX_FILE_SIZE
+from config import MAX_FILE_SIZE, MAX_IMAGE_SIDE
 from services import bg_remover
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ async def _process(message: Message, bot: Bot, file_id: str, filename: str) -> N
         if image_bytes is None:
             raise RuntimeError("Не удалось скачать файл")
 
-        result_bytes = await bg_remover.remove_background(image_bytes)
+        result_bytes = await bg_remover.remove_background(image_bytes, MAX_IMAGE_SIDE)
 
         output = BufferedInputFile(result_bytes, filename=filename)
         await message.answer_document(output, caption="✅ Готово! Фон удалён.")
